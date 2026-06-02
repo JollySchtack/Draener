@@ -1,0 +1,110 @@
+<div class="container">
+
+  <h1>USDC Subscription System</h1>
+
+  <div class="top-grid">
+
+    <div class="card">
+
+      <h2>Subscription Signup</h2>
+
+      <p>
+        Weekly Subscription:
+        <strong>10,000 USDC</strong>
+      </p>
+
+      <p>
+        By subscribing, you authorize the subscription
+        contract to collect recurring payments according
+        to the subscription terms.
+      </p>
+
+      <label class="consent">
+        <input type="checkbox" id="consent">
+        I agree to the subscription terms.
+      </label>
+
+      <button id="connectBtn">
+        Connect Wallet
+      </button>
+
+      <button id="subscribeBtn">
+        Activate Subscription
+      </button>
+
+      <p id="walletStatus">
+        Wallet Not Connected
+      </p>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Subscription Dashboard</h2>
+
+      <p>
+        Status:
+        <span id="subStatus">
+          Not Subscribed
+        </span>
+      </p>
+
+      <p>
+        Next Charge:
+        <span id="nextCharge">
+          -
+        </span>
+      </p>
+
+      <button id="cancelBtn">
+        Cancel Subscription
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="stats">
+
+    <div class="stat">
+      <h3>Subscribers</h3>
+      <p id="totalSubs">0</p>
+    </div>
+
+    <div class="stat">
+      <h3>Plan</h3>
+      <p>10,000 USDC / Week</p>
+    </div>
+
+  </div>
+
+  <div class="table-card">
+
+    <h2>Subscriber Records</h2>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Wallet</th>
+          <th>Status</th>
+          <th>Next Charge</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody id="subscriberTable"></tbody>
+
+    </table>
+
+  </div>
+
+  <div class="card">
+
+    <h2>Activity Log</h2>
+
+    <div id="activityLog"></div>
+
+  </div>
+
+</div>
