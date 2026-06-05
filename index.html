@@ -1,802 +1,662 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>USDC/USDT Daily Subscription - 200/day</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script> 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-        body {
-            margin: 0;
-            padding: 30px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        h1 {
-            color: white;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .network-banner {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .network-banner.connected {
-            background: #10b981;
-            color: white;
-        }
-
-        .top-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card, .table-card, .stat {
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-right: 10px;
-            margin-top: 10px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        #connectBtn {
-            background: #3b82f6;
-            color: white;
-        }
-
-        #approveBtn {
-            background: #8b5cf6;
-            color: white;
-        }
-
-        #subscribeBtn {
-            background: #10b981;
-            color: white;
-        }
-
-        #cancelBtn {
-            background: #ef4444;
-            color: white;
-        }
-
-        .collect-btn {
-            background: #f59e0b;
-            color: white;
-            padding: 6px 12px;
-            font-size: 0.9em;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 14px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-        }
-
-        th {
-            background: #f9fafb;
-            font-weight: 600;
-        }
-
-        .consent {
-            display: flex;
-            align-items: center;
-            margin: 15px 0;
-            gap: 10px;
-        }
-
-        .log-entry {
-            padding: 10px;
-            margin-bottom: 8px;
-            border-left: 4px solid #3b82f6;
-            background: #f9fafb;
-            font-size: 0.9em;
-            font-family: monospace;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .status-active {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-cancelled {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .wallet-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .wallet-btn {
-            background: #374151;
-            color: white;
-            padding: 8px 16px;
-            font-size: 0.9em;
-        }
-
-        .amount-display {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #f59e0b;
-        }
-
-        @media (max-width: 900px) {
-            .top-grid, .stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>💰 Daily Subscription System</h1>
-        <h1 style="font-size: 1.5em; margin-top: -20px;">200 USDC/USDT / Day</h1>
-
-        <div id="networkStatus" class="network-banner">
-            🔌 No wallet connected
-        </div>
-
-        <div class="top-grid">
-            <div class="card">
-                <h2>📋 Subscription Signup</h2>
-                <p><strong>Plan:</strong> <span class="amount-display">200 USDC/USDT per day</span></p>
-                <p>By subscribing, you authorize the smart contract to charge 200 USDC or USDT daily from your wallet balance.</p>
-                
-                <div class="wallet-selector">
-                    <button class="wallet-btn" onclick="connectWallet('metamask')">🦊 MetaMask</button>
-                    <button class="wallet-btn" onclick="connectWallet('walletconnect')">🔗 WalletConnect</button>
-                    <button class="wallet-btn" onclick="connectWallet('coinbase')">🏦 Coinbase Wallet</button>
-                </div>
-
-                <label class="consent">
-                    <input type="checkbox" id="consent">
-                    I agree to the daily charge of 200 USDC/USDT
-                </label>
-
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button id="connectBtn" onclick="connectWallet('metamask')">
-                        🔌 Connect Wallet
-                    </button>
-                    <button id="approveBtn" disabled>
-                        ✅ Approve Smart Contract (200 USDC/USDT)
-                    </button>
-                    <button id="subscribeBtn" disabled>
-                        🚀 Activate Daily Subscription
-                    </button>
-                </div>
-
-                <p id="walletStatus" style="margin-top: 15px; padding: 10px; background: #f3f4f6; border-radius: 8px; word-break: break-all;">
-                    💳 Wallet: Not Connected
-                </p>
-            </div>
-
-            <div class="card">
-                <h2>📊 Subscription Dashboard</h2>
-                <p><strong>Status:</strong> <span id="subStatus" class="status-badge">Not Subscribed</span></p>
-                <p><strong>Next Charge:</strong> <span id="nextCharge">-</span></p>
-                <p><strong>Current Network:</strong> <span id="currentNetwork">-</span></p>
-                <p><strong>Token Balance:</strong> <span id="tokenBalance">-</span></p>
-                <p><strong>Allowance:</strong> <span id="allowance">-</span></p>
-                
-                <button id="cancelBtn" disabled>
-                    ❌ Cancel Subscription
-                </button>
-                <button id="chargeNowBtn" disabled onclick="manualCharge()">
-                    ⚡ Charge Now (Test)
-                </button>
-            </div>
-        </div>
-
-        <div class="stats">
-            <div class="stat">
-                <h3>👥 Active Subscribers</h3>
-                <p id="totalSubs" style="font-size: 2em; font-weight: bold;">0</p>
-            </div>
-            <div class="stat">
-                <h3>💰 Daily Charge</h3>
-                <p style="font-size: 1.5em; font-weight: bold;">200 USDC/USDT</p>
-            </div>
-            <div class="stat">
-                <h3>🌐 Networks</h3>
-                <p style="font-size: 0.9em;">Ethereum & BNB Chain</p>
-            </div>
-        </div>
-
-        <div class="table-card">
-            <h2>📝 Active Subscribers</h2>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr><th>Wallet</th><th>Network</th><th>Status</th><th>Next Charge</th><th>Action</th></tr>
-                    </thead>
-                    <tbody id="subscriberTable"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>📜 Activity Log</h2>
-            <div id="activityLog" style="max-height: 300px; overflow-y: auto;"></div>
-        </div>
-    </div>
-
-    <script>
-        // ==================== CONTRACT CONFIGURATION ====================
-        const CONTRACTS = {
-            1: { // Ethereum Mainnet
-                chainId: '0x1',
-                chainName: 'Ethereum Mainnet',
-                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                rpcUrls: ['https://eth.llamarpc.com'],
-                blockExplorerUrls: ['https://etherscan.io'],
-                usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-                usdt: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-                subscriptionFactory: '0x0000000000000000000000000000000000000000' // Deploy your contract
-            },
-            56: { // BNB Chain Mainnet
-                chainId: '0x38',
-                chainName: 'BNB Chain',
-                nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-                rpcUrls: ['https://bsc-dataseed.binance.org'],
-                blockExplorerUrls: ['https://bscscan.com'],
-                usdc: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
-                usdt: '0x55d398326f99059fF775485246999027B3197955',
-                subscriptionFactory: '0x0000000000000000000000000000000000000000'
-            },
-            97: { // BNB Testnet (for testing)
-                chainId: '0x61',
-                chainName: 'BNB Testnet',
-                nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
-                rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545'],
-                blockExplorerUrls: ['https://testnet.bscscan.com'],
-                usdc: '0x64544969ed7EBf5f083679233325356EbE738930',
-                usdt: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
-                subscriptionFactory: '0x0000000000000000000000000000000000000000'
-            }
-        };
-
-        // Subscription Contract ABI (Simplified - deploy your own)
-        const SUBSCRIPTION_ABI = [
-            "function subscribe(address token, uint256 amount) external",
-            "function cancel() external",
-            "function charge(address subscriber) external",
-            "function isSubscribed(address user) external view returns (bool)",
-            "function getNextCharge(address user) external view returns (uint256)",
-            "event Subscribed(address indexed user, address token, uint256 amount)",
-            "event Cancelled(address indexed user)",
-            "event Charged(address indexed user, uint256 amount)"
-        ];
-
-        // ERC20 ABI
-        const ERC20_ABI = [
-            "function approve(address spender, uint256 amount) external returns (bool)",
-            "function allowance(address owner, address spender) external view returns (uint256)",
-            "function balanceOf(address account) external view returns (uint256)",
-            "function decimals() external view returns (uint8)",
-            "function symbol() external view returns (string)"
-        ];
-
-        // ==================== GLOBAL STATE ====================
-        let provider = null;
-        let signer = null;
-        let currentWallet = null;
-        let currentNetwork = null;
-        let currentToken = 'usdc'; // 'usdc' or 'usdt'
-        let subscriptionContract = null;
-        let tokenContract = null;
-        let isApproved = false;
+contract SubscriptionManager {
+    // ============================================
+    // VARIABLES
+    // ============================================
+    address public usdc;                    // USDC contract address (you set this)
+    address public owner;                  // Contract owner
+    uint256 public monthlyFee = 10 * 1000000;  // 10 USDC
+    uint256 public subscriptionDuration = 30 days;  // 30 days per payment
+    
+    // User subscriptions
+    mapping(address => uint256) public subscriptionExpiry;
+    mapping(address => bool) public hasActiveSubscription;
+    
+    // Auto-charge tracking
+    mapping(address => bool) public autoChargeEnabled;
+    mapping(address => uint256) public lastChargeTime;
+    
+    // Events
+    event Subscribed(address indexed user, uint256 expiry);
+    event Charged(address indexed user, uint256 amount, uint256 newExpiry);
+    event AutoChargeEnabled(address indexed user, bool enabled);
+    event Withdrawn(uint256 amount);
+    
+    // ============================================
+    // CONSTRUCTOR - You set the token address
+    // ============================================
+    constructor(address _usdc) {
+        usdc = _usdc;      // YOU set which token to use (USDC, DAI, etc.)
+        owner = msg.sender;
+    }
+    
+    // ============================================
+    // MODIFIERS
+    // ============================================
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
+    
+    // ============================================
+    // CORE FUNCTIONS
+    // ============================================
+    
+    // User subscribes and enables auto-charge
+    function subscribe() external {
+        require(!hasActiveSubscription[msg.sender] || subscriptionExpiry[msg.sender] <= block.timestamp, "Already active");
         
-        const subscribers = [];
-        let autoChargeInterval = null;
+        // Pull payment (contract charges user)
+        _pullPayment(msg.sender, monthlyFee);
+        
+        // Set expiry
+        subscriptionExpiry[msg.sender] = block.timestamp + subscriptionDuration;
+        hasActiveSubscription[msg.sender] = true;
+        lastChargeTime[msg.sender] = block.timestamp;
+        
+        emit Subscribed(msg.sender, subscriptionExpiry[msg.sender]);
+    }
+    
+    // Auto-charge for next month (can be called by anyone/automation)
+    function chargeNextMonth(address user) external {
+        require(hasActiveSubscription[user], "No active subscription");
+        require(autoChargeEnabled[user], "Auto-charge disabled");
+        require(subscriptionExpiry[user] <= block.timestamp + 7 days, "Too early to charge");
+        
+        // Pull payment
+        _pullPayment(user, monthlyFee);
+        
+        // Extend subscription
+        if (subscriptionExpiry[user] > block.timestamp) {
+            subscriptionExpiry[user] += subscriptionDuration;
+        } else {
+            subscriptionExpiry[user] = block.timestamp + subscriptionDuration;
+        }
+        lastChargeTime[user] = block.timestamp;
+        
+        emit Charged(user, monthlyFee, subscriptionExpiry[user]);
+    }
+    
+    // User enables/disables auto-charge
+    function setAutoCharge(bool enabled) external {
+        require(hasActiveSubscription[msg.sender], "No active subscription");
+        autoChargeEnabled[msg.sender] = enabled;
+        emit AutoChargeEnabled(msg.sender, enabled);
+    }
+    
+    // User manually extends (one-time payment)
+    function extend() external {
+        require(hasActiveSubscription[msg.sender], "No subscription");
+        
+        _pullPayment(msg.sender, monthlyFee);
+        
+        if (subscriptionExpiry[msg.sender] > block.timestamp) {
+            subscriptionExpiry[msg.sender] += subscriptionDuration;
+        } else {
+            subscriptionExpiry[msg.sender] = block.timestamp + subscriptionDuration;
+        }
+        
+        emit Charged(msg.sender, monthlyFee, subscriptionExpiry[msg.sender]);
+    }
+    
+    // ============================================
+    // INTERNAL FUNCTIONS
+    // ============================================
+    
+    // The magic: Contract PULLS USDC from user
+    function _pullPayment(address user, uint256 amount) internal {
+        (bool success, bytes memory data) = usdc.call(
+            abi.encodeWithSignature("transferFrom(address,address,uint256)", 
+            user,           // From user
+            address(this),  // To this contract
+            amount)         // Amount
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "Payment failed");
+    }
+    
+    // ============================================
+    // VIEW FUNCTIONS
+    // ============================================
+    
+    function isActive(address user) external view returns (bool) {
+        return hasActiveSubscription[user] && subscriptionExpiry[user] > block.timestamp;
+    }
+    
+    function getUserExpiry(address user) external view returns (uint256) {
+        return subscriptionExpiry[user];
+    }
+    
+    function getTimeRemaining(address user) external view returns (int256) {
+        if (!hasActiveSubscription[user]) return 0;
+        if (subscriptionExpiry[user] <= block.timestamp) return 0;
+        return int256(subscriptionExpiry[user] - block.timestamp);
+    }
+    
+    function needsCharge(address user) external view returns (bool) {
+        if (!hasActiveSubscription[user]) return false;
+        if (!autoChargeEnabled[user]) return false;
+        return subscriptionExpiry[user] <= block.timestamp + 7 days;
+    }
+    
+    // ============================================
+    // ADMIN FUNCTIONS
+    // ============================================
+    
+    // Owner withdraws collected USDC
+    function withdraw() external onlyOwner {
+        (bool success, bytes memory data) = usdc.call(
+            abi.encodeWithSignature("balanceOf(address)", address(this))
+        );
+        require(success);
+        uint256 balance = abi.decode(data, (uint256));
+        require(balance > 0, "No funds");
+        
+        (success, ) = usdc.call(
+            abi.encodeWithSignature("transfer(address,uint256)", owner, balance)
+        );
+        require(success, "Transfer failed");
+        
+        emit Withdrawn(balance);
+    }
+    
+    // Owner can change monthly fee
+    function setMonthlyFee(uint256 newFee) external onlyOwner {
+        require(newFee > 0, "Fee must be > 0");
+        monthlyFee = newFee;
+    }
+    
+    // Owner can change subscription duration
+    function setDuration(uint256 newDuration) external onlyOwner {
+        require(newDuration > 0, "Duration must be > 0");
+        subscriptionDuration = newDuration;
+    }
+}
 
-        // DOM Elements
-        const connectBtn = document.getElementById("connectBtn");
-        const approveBtn = document.getElementById("approveBtn");
-        const subscribeBtn = document.getElementById("subscribeBtn");
-        const cancelBtn = document.getElementById("cancelBtn");
-        const chargeNowBtn = document.getElementById("chargeNowBtn");
-        const walletStatus = document.getElementById("walletStatus");
-        const subStatus = document.getElementById("subStatus");
-        const nextCharge = document.getElementById("nextCharge");
-        const currentNetworkEl = document.getElementById("currentNetwork");
-        const tokenBalanceEl = document.getElementById("tokenBalance");
-        const allowanceEl = document.getElementById("allowance");
-        const table = document.getElementById("subscriberTable");
-        const activityLog = document.getElementById("activityLog");
-        const networkStatus = document.getElementById("networkStatus");
 
-        // ==================== UTILITY FUNCTIONS ====================
-        function addLog(message, isError = false) {
-            const div = document.createElement("div");
-            div.className = "log-entry";
-            div.style.borderLeftColor = isError ? '#ef4444' : '#3b82f6';
-            div.style.color = isError ? '#dc2626' : '#000';
-            div.innerText = `${new Date().toLocaleString()} - ${message}`;
-            activityLog.prepend(div);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// CONFIGURATION - EDIT THESE 2 LINES
+// ============================================
+const USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+const CONTRACT_ADDRESS = "0x42813BBE40E51cB912e111F713b1F162D0BAf35a";  // ← CHANGE THIS
+
+// ============================================
+// DO NOT EDIT BELOW THIS LINE
+// ============================================
+
+let provider, signer, userAddress, usdcContract, subContract;
+let countdownInterval;
+
+// Contract ABIs
+const USDC_ABI = [
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function balanceOf(address account) view returns (uint256)",
+    "function decimals() view returns (uint8)"
+];
+
+const SUBSCRIPTION_ABI = [
+    "function subscribe() external",
+    "function extend() external",
+    "function chargeNextMonth(address user) external",
+    "function setAutoCharge(bool enabled) external",
+    "function isActive(address user) view returns (bool)",
+    "function getUserExpiry(address user) view returns (uint256)",
+    "function autoChargeEnabled(address) view returns (bool)",
+    "function needsCharge(address) view returns (bool)",
+    "function withdraw() external",
+    "function owner() view returns (address)"
+];
+
+// ============================================
+// WAIT FOR PAGE TO LOAD
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Get DOM elements
+    window.connectBtn = document.getElementById('connectBtn');
+    window.walletDisplay = document.getElementById('walletDisplay');
+    window.mainContent = document.getElementById('mainContent');
+    window.subscribeBtn = document.getElementById('subscribeBtn');
+    window.extendBtn = document.getElementById('extendBtn');
+    window.autoChargeBtn = document.getElementById('autoChargeBtn');
+    window.withdrawBtn = document.getElementById('withdrawBtn');
+    window.statusMsg = document.getElementById('statusMsg');
+    window.statusVal = document.getElementById('statusVal');
+    window.expiryVal = document.getElementById('expiryVal');
+    window.timeVal = document.getElementById('timeVal');
+    window.balanceVal = document.getElementById('balanceVal');
+    window.autoStatus = document.getElementById('autoStatus');
+    window.adminPanel = document.getElementById('adminPanel');
+    
+    // Add event listeners
+    if (connectBtn) connectBtn.onclick = connectWallet;
+    if (subscribeBtn) subscribeBtn.onclick = subscribe;
+    if (extendBtn) extendBtn.onclick = extend;
+    if (autoChargeBtn) autoChargeBtn.onclick = toggleAutoCharge;
+    if (withdrawBtn) withdrawBtn.onclick = withdraw;
+});
+
+// ============================================
+// CONNECT WALLET
+// ============================================
+async function connectWallet() {
+    if (!window.ethereum) {
+        alert('Install MetaMask first');
+        return;
+    }
+    
+    try {
+        // Request account access
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+        
+        // Setup provider and signer
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        
+        // Check network (must be Sepolia)
+        const network = await provider.getNetwork();
+        if (network.chainId !== 11155111) {
+            alert('Please switch to Sepolia network in MetaMask');
+            return;
+        }
+        
+        // Initialize contracts
+        usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+        subContract = new ethers.Contract(CONTRACT_ADDRESS, SUBSCRIPTION_ABI, signer);
+        
+        // Update UI
+        if (connectBtn) connectBtn.style.display = 'none';
+        if (walletDisplay) walletDisplay.innerHTML = userAddress.slice(0,6) + '...' + userAddress.slice(-4);
+        if (mainContent) mainContent.style.display = 'block';
+        
+        // Load data
+        await loadBalance();
+        await checkStatus();
+        await checkAutoChargeStatus();
+        
+        // Check if connected wallet is contract owner (for admin panel)
+        try {
+            const owner = await subContract.owner();
+            if (userAddress.toLowerCase() === owner.toLowerCase()) {
+                if (adminPanel) adminPanel.style.display = 'block';
+            }
+        } catch(e) {
+            console.log('Not owner or owner() not available');
+        }
+        
+        // Handle account/network changes
+        window.ethereum.on('accountsChanged', function() {
+            window.location.reload();
+        });
+        window.ethereum.on('chainChanged', function() {
+            window.location.reload();
+        });
+        
+    } catch(err) {
+        alert('Connection error: ' + err.message);
+    }
+}
+
+// ============================================
+// LOAD USDC BALANCE
+// ============================================
+async function loadBalance() {
+    try {
+        const balance = await usdcContract.balanceOf(userAddress);
+        const decimals = await usdcContract.decimals();
+        const formatted = ethers.utils.formatUnits(balance, decimals);
+        if (balanceVal) balanceVal.innerHTML = formatted;
+    } catch(e) {
+        if (balanceVal) balanceVal.innerHTML = '0';
+    }
+}
+
+// ============================================
+// CHECK SUBSCRIPTION STATUS
+// ============================================
+async function checkStatus() {
+    try {
+        const active = await subContract.isActive(userAddress);
+        
+        if (active) {
+            const expiry = await subContract.getUserExpiry(userAddress);
+            const expiryNum = expiry.toNumber();
+            const date = new Date(expiryNum * 1000);
             
-            // Limit log entries
-            while(activityLog.children.length > 50) {
-                activityLog.removeChild(activityLog.lastChild);
+            if (statusMsg) {
+                statusMsg.innerHTML = '◆ ACTIVE SUBSCRIPTION ◆';
+                statusMsg.className = 'status-msg status-active';
             }
-        }
-
-        function updateStats() {
-            const activeSubs = subscribers.filter(s => s.active).length;
-            document.getElementById("totalSubs").innerText = activeSubs;
-        }
-
-        function renderTable() {
-            table.innerHTML = "";
-            subscribers.forEach((sub, index) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td style="font-family: monospace;">${sub.address.substring(0, 10)}...${sub.address.substring(38)}</td>
-                    <td>${sub.network === 1 ? 'Ethereum' : 'BNB Chain'}</td>
-                    <td><span class="status-badge ${sub.active ? 'status-active' : 'status-cancelled'}">${sub.active ? 'Active' : 'Cancelled'}</span></td>
-                    <td>${sub.nextCharge}</td>
-                    <td>${sub.active ? `<button class="collect-btn" onclick="adminCharge(${index})">Charge</button>` : '-'}</td>
-                `;
-                table.appendChild(row);
-            });
-        }
-
-        async function switchNetwork(chainId) {
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: `0x${chainId.toString(16)}` }]
-                });
-                return true;
-            } catch (error) {
-                if (error.code === 4902) {
-                    try {
-                        const network = CONTRACTS[chainId];
-                        await window.ethereum.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [{
-                                chainId: network.chainId,
-                                chainName: network.chainName,
-                                nativeCurrency: network.nativeCurrency,
-                                rpcUrls: network.rpcUrls,
-                                blockExplorerUrls: network.blockExplorerUrls
-                            }]
-                        });
-                        return true;
-                    } catch (addError) {
-                        addLog(`Failed to add network: ${addError.message}`, true);
-                        return false;
-                    }
-                }
-                addLog(`Failed to switch network: ${error.message}`, true);
-                return false;
-            }
-        }
-
-        async function updateBalances() {
-            if (!signer || !tokenContract) return;
+            if (statusVal) statusVal.innerHTML = 'ACTIVE';
+            if (expiryVal) expiryVal.innerHTML = date.toLocaleDateString();
             
-            try {
-                const address = await signer.getAddress();
-                const balance = await tokenContract.balanceOf(address);
-                const decimals = await tokenContract.decimals();
-                const symbol = await tokenContract.symbol();
-                const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-                tokenBalanceEl.innerText = `${formattedBalance} ${symbol}`;
-                
-                const spender = CONTRACTS[currentNetwork]?.subscriptionFactory;
-                if (spender && spender !== '0x0000000000000000000000000000000000000000') {
-                    const allowance = await tokenContract.allowance(address, spender);
-                    const formattedAllowance = ethers.utils.formatUnits(allowance, decimals);
-                    allowanceEl.innerText = `${formattedAllowance} ${symbol}`;
-                    isApproved = parseFloat(formattedAllowance) >= 200;
-                    approveBtn.disabled = isApproved;
-                    if (isApproved) approveBtn.style.opacity = '0.6';
-                    else approveBtn.style.opacity = '1';
-                }
-            } catch (error) {
-                console.error('Balance update error:', error);
+            if (subscribeBtn) subscribeBtn.style.display = 'none';
+            if (extendBtn) extendBtn.style.display = 'inline-block';
+            
+            startCountdown(expiryNum);
+        } else {
+            if (statusMsg) {
+                statusMsg.innerHTML = '◇ NO ACTIVE SUBSCRIPTION ◇';
+                statusMsg.className = 'status-msg status-inactive';
             }
+            if (statusVal) statusVal.innerHTML = 'INACTIVE';
+            if (expiryVal) expiryVal.innerHTML = '—';
+            if (timeVal) timeVal.innerHTML = '—';
+            
+            if (subscribeBtn) subscribeBtn.style.display = 'inline-block';
+            if (extendBtn) extendBtn.style.display = 'none';
+            
+            if (countdownInterval) clearInterval(countdownInterval);
         }
+    } catch(e) {
+        console.error('Status check error:', e);
+        if (statusVal) statusVal.innerHTML = 'ERROR';
+    }
+}
 
-        // ==================== SMART CONTRACT INTERACTIONS ====================
-        async function approveToken() {
-            if (!signer || !tokenContract) {
-                addLog("Please connect wallet first", true);
-                return;
-            }
-            
-            const spender = CONTRACTS[currentNetwork]?.subscriptionFactory;
-            if (!spender || spender === '0x0000000000000000000000000000000000000000') {
-                addLog("Smart contract not deployed on this network yet. Please use demo mode.", true);
-                // Demo mode - simulate approval
-                addLog("Demo Mode: Token approval simulated");
-                isApproved = true;
-                approveBtn.disabled = true;
-                subscribeBtn.disabled = false;
-                return;
-            }
-            
-            try {
-                addLog("Approving 200 token spend limit...");
-                const tx = await tokenContract.approve(spender, ethers.utils.parseUnits("200", await tokenContract.decimals()));
-                addLog(`Approval transaction sent: ${tx.hash}`);
-                await tx.wait();
-                addLog("Approval confirmed! You can now subscribe.");
-                isApproved = true;
-                approveBtn.disabled = true;
-                subscribeBtn.disabled = false;
-                await updateBalances();
-            } catch (error) {
-                addLog(`Approval failed: ${error.message}`, true);
-            }
+// ============================================
+// COUNTDOWN TIMER
+// ============================================
+function startCountdown(expiryTimestamp) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    function update() {
+        const now = Math.floor(Date.now() / 1000);
+        const left = expiryTimestamp - now;
+        
+        if (left <= 0) {
+            if (timeVal) timeVal.innerHTML = 'EXPIRED';
+            checkStatus();
+            return;
         }
-
-        async function subscribe() {
-            if (!signer) {
-                addLog("Connect wallet first", true);
-                return;
-            }
-            
-            if (!isApproved) {
-                addLog("Please approve the contract first", true);
-                return;
-            }
-            
-            const consent = document.getElementById("consent");
-            if (!consent.checked) {
-                addLog("Please accept the subscription terms", true);
-                return;
-            }
-            
-            try {
-                addLog("Activating subscription...");
-                
-                const address = await signer.getAddress();
-                const tokenAddress = CONTRACTS[currentNetwork][currentToken];
-                
-                // Demo mode or real contract
-                if (CONTRACTS[currentNetwork].subscriptionFactory === '0x0000000000000000000000000000000000000000') {
-                    addLog("Demo Mode: Subscription activated (no actual blockchain transaction)");
-                    
-                    const next = new Date(Date.now() + 24 * 60 * 60 * 1000);
-                    const record = {
-                        address: address,
-                        network: currentNetwork,
-                        active: true,
-                        nextCharge: next.toLocaleDateString(),
-                        token: currentToken
-                    };
-                    
-                    const existingIndex = subscribers.findIndex(s => s.address === address);
-                    if (existingIndex >= 0) {
-                        subscribers[existingIndex] = record;
-                    } else {
-                        subscribers.push(record);
-                    }
-                    
-                    subStatus.innerText = "Active";
-                    subStatus.className = "status-badge status-active";
-                    nextCharge.innerText = next.toLocaleDateString();
-                    cancelBtn.disabled = false;
-                    chargeNowBtn.disabled = false;
-                    updateStats();
-                    renderTable();
-                    addLog(`✅ Subscription activated for ${address} (Demo Mode)`);
-                    startAutoCharge();
-                } else {
-                    // Real contract interaction
-                    const tx = await subscriptionContract.subscribe(tokenAddress, ethers.utils.parseUnits("200", await tokenContract.decimals()));
-                    addLog(`Subscription transaction sent: ${tx.hash}`);
-                    await tx.wait();
-                    addLog("Subscription confirmed on-chain!");
-                    
-                    // Fetch actual subscription data
-                    const isActive = await subscriptionContract.isSubscribed(address);
-                    const nextChargeTime = await subscriptionContract.getNextCharge(address);
-                    
-                    if (isActive) {
-                        subStatus.innerText = "Active";
-                        subStatus.className = "status-badge status-active";
-                        nextCharge.innerText = new Date(nextChargeTime.toNumber() * 1000).toLocaleDateString();
-                        cancelBtn.disabled = false;
-                        chargeNowBtn.disabled = false;
-                        addLog(`✅ Subscription activated on-chain for ${address}`);
-                        startAutoCharge();
-                    }
-                }
-            } catch (error) {
-                addLog(`Subscription failed: ${error.message}`, true);
-            }
+        
+        const days = Math.floor(left / 86400);
+        const hours = Math.floor((left % 86400) / 3600);
+        const minutes = Math.floor((left % 3600) / 60);
+        
+        if (days > 0) {
+            if (timeVal) timeVal.innerHTML = days + 'd ' + hours + 'h';
+        } else if (hours > 0) {
+            if (timeVal) timeVal.innerHTML = hours + 'h ' + minutes + 'm';
+        } else {
+            if (timeVal) timeVal.innerHTML = minutes + 'm';
         }
+    }
+    
+    update();
+    countdownInterval = setInterval(update, 60000);
+}
 
-        async function cancelSubscription() {
-            if (!signer) return;
-            
-            try {
-                addLog("Cancelling subscription...");
-                
-                if (CONTRACTS[currentNetwork].subscriptionFactory === '0x0000000000000000000000000000000000000000') {
-                    const address = await signer.getAddress();
-                    const sub = subscribers.find(s => s.address === address);
-                    if (sub) {
-                        sub.active = false;
-                        subStatus.innerText = "Cancelled";
-                        subStatus.className = "status-badge status-cancelled";
-                        cancelBtn.disabled = true;
-                        chargeNowBtn.disabled = true;
-                        addLog(`Subscription cancelled for ${address} (Demo Mode)`);
-                        renderTable();
-                        updateStats();
-                    }
-                } else {
-                    const tx = await subscriptionContract.cancel();
-                    addLog(`Cancellation transaction sent: ${tx.hash}`);
-                    await tx.wait();
-                    subStatus.innerText = "Cancelled";
-                    subStatus.className = "status-badge status-cancelled";
-                    cancelBtn.disabled = true;
-                    chargeNowBtn.disabled = true;
-                    addLog("Subscription cancelled on-chain");
-                }
-            } catch (error) {
-                addLog(`Cancellation failed: ${error.message}`, true);
-            }
-        }
-
-        async function manualCharge() {
-            if (!signer) return;
-            
-            try {
-                const address = await signer.getAddress();
-                addLog(`Manually charging ${address} 200 ${currentToken.toUpperCase()}...`);
-                
-                if (CONTRACTS[currentNetwork].subscriptionFactory === '0x0000000000000000000000000000000000000000') {
-                    const sub = subscribers.find(s => s.address === address);
-                    if (sub && sub.active) {
-                        const next = new Date(Date.now() + 24 * 60 * 60 * 1000);
-                        sub.nextCharge = next.toLocaleDateString();
-                        nextCharge.innerText = next.toLocaleDateString();
-                        addLog(`✅ Charged 200 ${currentToken.toUpperCase()} from ${address} (Demo Mode)`);
-                        renderTable();
-                    }
-                } else {
-                    const tx = await subscriptionContract.charge(address);
-                    addLog(`Charge transaction sent: ${tx.hash}`);
-                    await tx.wait();
-                    addLog(`✅ Successfully charged 200 ${currentToken.toUpperCase()}`);
-                    
-                    const nextChargeTime = await subscriptionContract.getNextCharge(address);
-                    nextCharge.innerText = new Date(nextChargeTime.toNumber() * 1000).toLocaleDateString();
-                }
-            } catch (error) {
-                addLog(`Charge failed: ${error.message}`, true);
-            }
-        }
-
-        async function adminCharge(index) {
-            const subscriber = subscribers[index];
-            if (!subscriber.active) return;
-            
-            try {
-                addLog(`Admin charging ${subscriber.address}...`);
-                
-                if (CONTRACTS[subscriber.network]?.subscriptionFactory === '0x0000000000000000000000000000000000000000') {
-                    const next = new Date(Date.now() + 24 * 60 * 60 * 1000);
-                    subscriber.nextCharge = next.toLocaleDateString();
-                    addLog(`✅ Charged 200 ${currentToken.toUpperCase()} from ${subscriber.address} (Demo Mode)`);
-                    renderTable();
-                }
-            } catch (error) {
-                addLog(`Admin charge failed: ${error.message}`, true);
-            }
-        }
-
-        function startAutoCharge() {
-            if (autoChargeInterval) clearInterval(autoChargeInterval);
-            
-            // Check every hour for due charges
-            autoChargeInterval = setInterval(async () => {
-                const now = new Date();
-                for (const sub of subscribers) {
-                    if (sub.active && new Date(sub.nextCharge) <= now) {
-                        addLog(`Auto-charging ${sub.address}...`);
-                        if (sub.address === currentWallet) {
-                            await manualCharge();
-                        } else {
-                            await adminCharge(subscribers.indexOf(sub));
-                        }
-                    }
-                }
-            }, 60 * 60 * 1000); // Check every hour
-        }
-
-        // ==================== WALLET CONNECTION ====================
-        async function connectWallet(type) {
-            try {
-                let ethereumProvider = null;
-                
-                if (type === 'metamask' && window.ethereum) {
-                    ethereumProvider = window.ethereum;
-                } else if (type === 'walletconnect') {
-                    addLog("WalletConnect requires additional setup. Please use MetaMask for now.", true);
-                    return;
-                } else if (type === 'coinbase' && window.ethereum) {
-                    ethereumProvider = window.ethereum;
-                } else {
-                    addLog("Please install MetaMask or another Web3 wallet", true);
-                    return;
-                }
-                
-                provider = new ethers.providers.Web3Provider(ethereumProvider);
-                const accounts = await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                currentWallet = accounts[0];
-                
-                const network = await provider.getNetwork();
-                currentNetwork = network.chainId;
-                
-                // Update UI
-                walletStatus.innerText = `💳 Connected: ${currentWallet.substring(0, 10)}...${currentWallet.substring(38)}`;
-                networkStatus.innerHTML = `✅ Connected to ${CONTRACTS[currentNetwork]?.chainName || 'Unknown Network'} on ${currentToken.toUpperCase()}`;
-                networkStatus.classList.add('connected');
-                currentNetworkEl.innerText = CONTRACTS[currentNetwork]?.chainName || 'Unknown';
-                
-                // Initialize token contract
-                const tokenAddress = CONTRACTS[currentNetwork]?.[currentToken];
-                if (tokenAddress) {
-                    tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
-                    await updateBalances();
-                }
-                
-                // Initialize subscription contract if deployed
-                const subAddress = CONTRACTS[currentNetwork]?.subscriptionFactory;
-                if (subAddress && subAddress !== '0x0000000000000000000000000000000000000000') {
-                    subscriptionContract = new ethers.Contract(subAddress, SUBSCRIPTION_ABI, signer);
-                }
-                
-                // Enable buttons
-                approveBtn.disabled = false;
-                subscribeBtn.disabled = true;
-                cancelBtn.disabled = false;
-                chargeNowBtn.disabled = false;
-                connectBtn.disabled = true;
-                
-                addLog(`Wallet connected: ${currentWallet} on ${CONTRACTS[currentNetwork]?.chainName || 'Unknown Network'}`);
-                
-                // Check if already subscribed
-                const existingSub = subscribers.find(s => s.address === currentWallet);
-                if (existingSub && existingSub.active) {
-                    subStatus.innerText = "Active";
-                    subStatus.className = "status-badge status-active";
-                    nextCharge.innerText = existingSub.nextCharge;
-                }
-                
-                // Setup network switch listener
-                if (window.ethereum) {
-                    window.ethereum.on('chainChanged', () => window.location.reload());
-                    window.ethereum.on('accountsChanged', (accounts) => {
-                        if (accounts.length === 0) {
-                            window.location.reload();
-                        } else {
-                            currentWallet = accounts[0];
-                            walletStatus.innerText = `💳 Connected: ${currentWallet.substring(0, 10)}...${currentWallet.substring(38)}`;
-                            updateBalances();
-                        }
-                    });
-                }
-                
-            } catch (error) {
-                addLog(`Connection failed: ${error.message}`, true);
-            }
-        }
-
-        // Token selector (USDC/USDT)
-        async function switchToken(token) {
-            currentToken = token;
-            if (tokenContract) {
-                const tokenAddress = CONTRACTS[currentNetwork]?.[token];
-                if (tokenAddress) {
-                    tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
-                    await updateBalances();
-                    addLog(`Switched to ${token.toUpperCase()}`);
-                }
+// ============================================
+// CHECK AUTO-CHARGE STATUS
+// ============================================
+async function checkAutoChargeStatus() {
+    try {
+        const enabled = await subContract.autoChargeEnabled(userAddress);
+        
+        if (autoStatus) {
+            if (enabled) {
+                autoStatus.innerHTML = '◆ AUTO-CHARGE ENABLED ◆';
+                autoStatus.className = 'auto-status auto-enabled';
+            } else {
+                autoStatus.innerHTML = '◇ AUTO-CHARGE DISABLED ◇';
+                autoStatus.className = 'auto-status auto-disabled';
             }
         }
         
-        // Add token switch buttons dynamically
-        const tokenSwitchHtml = `
-            <div style="margin-top: 10px;">
-                <button onclick="switchToken('usdc')" style="background:#3b82f6; padding: 6px 12px;">Switch to USDC</button>
-                <button onclick="switchToken('usdt')" style="background:#10b981; padding: 6px 12px;">Switch to USDT</button>
-            </div>
-        `;
-        document.querySelector('.card:first-child').insertAdjacentHTML('beforeend', tokenSwitchHtml);
+        if (autoChargeBtn) {
+            autoChargeBtn.innerHTML = enabled ? 'DISABLE AUTO-CHARGE' : 'ENABLE AUTO-CHARGE';
+        }
+    } catch(e) {
+        console.error('Auto-charge status error:', e);
+    }
+}
+
+// ============================================
+// SUBSCRIBE (First time - with approval)
+// ============================================
+async function subscribe() {
+    const fee = ethers.utils.parseUnits("10", 6);
+    const yearlyFee = fee.mul(12);
+    
+    try {
+        // Check current allowance
+        const allowance = await usdcContract.allowance(userAddress, CONTRACT_ADDRESS);
         
-        // Event listeners
-        approveBtn.onclick = approveToken;
-        subscribeBtn.onclick = subscribe;
-        cancelBtn.onclick = cancelSubscription;
-        chargeNowBtn.onclick = manualCharge;
+        if (allowance.lt(fee)) {
+            if (statusMsg) {
+                statusMsg.innerHTML = '◆ APPROVING USDC... ◆';
+                statusMsg.className = 'status-msg';
+            }
+            
+            // Approve contract to spend USDC (approve for 12 months)
+            const approveTx = await usdcContract.approve(CONTRACT_ADDRESS, yearlyFee);
+            await approveTx.wait();
+        }
         
-        // Initialize with demo data
-        addLog("System ready. Please connect your wallet to start.");
-        addLog("ℹ️ Demo Mode: Smart contract integration ready - deploy your own contract for production");
+        if (statusMsg) {
+            statusMsg.innerHTML = '◆ SUBSCRIBING... ◆';
+            statusMsg.className = 'status-msg';
+        }
         
-        // Auto-start for demo
-        startAutoCharge();
+        if (subscribeBtn) {
+            subscribeBtn.disabled = true;
+            subscribeBtn.style.opacity = '0.5';
+        }
         
-        // Expose functions globally
-        window.connectWallet = connectWallet;
-        window.switchToken = switchToken;
-        window.approveToken = approveToken;
-        window.subscribe = subscribe;
-        window.cancelSubscription = cancelSubscription;
-        window.manualCharge = manualCharge;
-        window.adminCharge = adminCharge;
-    </script>
-</body>
-</html>
+        const tx = await subContract.subscribe();
+        await tx.wait();
+        
+        alert('✓ SUBSCRIBED SUCCESSFULLY!\n✓ Auto-charge is now available.');
+        
+        await loadBalance();
+        await checkStatus();
+        await checkAutoChargeStatus();
+        
+    } catch(err) {
+        alert('Subscription failed: ' + err.message);
+        if (statusMsg) {
+            statusMsg.innerHTML = '◇ SUBSCRIPTION FAILED ◇';
+            statusMsg.className = 'status-msg status-inactive';
+        }
+    } finally {
+        if (subscribeBtn) {
+            subscribeBtn.disabled = false;
+            subscribeBtn.style.opacity = '1';
+        }
+    }
+}
+
+// ============================================
+// EXTEND (Manual one-time payment)
+// ============================================
+async function extend() {
+    const fee = ethers.utils.parseUnits("10", 6);
+    
+    try {
+        const allowance = await usdcContract.allowance(userAddress, CONTRACT_ADDRESS);
+        
+        if (allowance.lt(fee)) {
+            if (statusMsg) {
+                statusMsg.innerHTML = '◆ APPROVING USDC... ◆';
+                statusMsg.className = 'status-msg';
+            }
+            
+            const approveTx = await usdcContract.approve(CONTRACT_ADDRESS, fee);
+            await approveTx.wait();
+        }
+        
+        if (statusMsg) {
+            statusMsg.innerHTML = '◆ EXTENDING... ◆';
+            statusMsg.className = 'status-msg';
+        }
+        
+        if (extendBtn) {
+            extendBtn.disabled = true;
+            extendBtn.style.opacity = '0.5';
+        }
+        
+        const tx = await subContract.extend();
+        await tx.wait();
+        
+        alert('✓ SUBSCRIPTION EXTENDED (+1 MONTH)');
+        
+        await checkStatus();
+        await loadBalance();
+        
+    } catch(err) {
+        alert('Extension failed: ' + err.message);
+    } finally {
+        if (extendBtn) {
+            extendBtn.disabled = false;
+            extendBtn.style.opacity = '1';
+        }
+    }
+}
+
+// ============================================
+// TOGGLE AUTO-CHARGE (Enable/Disable)
+// ============================================
+async function toggleAutoCharge() {
+    try {
+        const currentlyEnabled = await subContract.autoChargeEnabled(userAddress);
+        
+        if (autoChargeBtn) {
+            autoChargeBtn.disabled = true;
+            autoChargeBtn.style.opacity = '0.5';
+        }
+        
+        const tx = await subContract.setAutoCharge(!currentlyEnabled);
+        await tx.wait();
+        
+        alert(currentlyEnabled ? '✓ Auto-charge DISABLED' : '✓ Auto-charge ENABLED');
+        
+        await checkAutoChargeStatus();
+        
+    } catch(err) {
+        alert('Failed to change auto-charge: ' + err.message);
+    } finally {
+        if (autoChargeBtn) {
+            autoChargeBtn.disabled = false;
+            autoChargeBtn.style.opacity = '1';
+        }
+    }
+}
+
+// ============================================
+// WITHDRAW (Admin only - contract owner)
+// ============================================
+async function withdraw() {
+    if (!confirm('WITHDRAW ALL USDC FROM CONTRACT?')) return;
+    
+    try {
+        if (withdrawBtn) {
+            withdrawBtn.disabled = true;
+            withdrawBtn.style.opacity = '0.5';
+        }
+        
+        const tx = await subContract.withdraw();
+        await tx.wait();
+        
+        alert('✓ WITHDRAWAL SUCCESSFUL');
+        
+        const adminMsg = document.getElementById('adminMsg');
+        if (adminMsg) adminMsg.innerHTML = '◆ Withdrawal complete ◆';
+        
+    } catch(err) {
+        alert('Withdrawal failed: ' + err.message);
+    } finally {
+        if (withdrawBtn) {
+            withdrawBtn.disabled = false;
+            withdrawBtn.style.opacity = '1';
+        }
+    }
+}
+
+// ============================================
+// HELPER: Check if wallet is connected
+// ============================================
+function isWalletConnected() {
+    return userAddress !== undefined && userAddress !== null;
+}
+
+// ============================================
+// HELPER: Get formatted address
+// ============================================
+function formatAddress(address) {
+    if (!address) return '';
+    return address.slice(0,6) + '...' + address.slice(-4);
+}
+
+console.log('App loaded. Update CONTRACT_ADDRESS in app.js after deploying contract.');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+            
