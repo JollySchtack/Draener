@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>◼ SUBSCRIPTION · AUTO-CHARGE</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>◼ SUBSCRIPTION</h1>
+            <p>AUTO-CHARGE · USDC · PULL PAYMENT</p>
+        </div>
+
+        <!-- WALLET CONNECTION -->
+        <div class="wallet-box">
+            <button id="connectBtn" class="btn-black">CONNECT WALLET</button>
+            <div id="walletDisplay" class="wallet-display"></div>
+        </div>
+
+        <!-- MAIN CONTENT (shown after connection) -->
+        <div id="mainContent" style="display:none;">
+            
+            <!-- SUBSCRIPTION CARD -->
+            <div class="plan-card">
+                <div class="plan-title">PREMIUM</div>
+                <div class="plan-price">10 USDC <span>/ MONTH</span></div>
+                <div class="plan-features">
+                    <div>✦ FULL ACCESS</div>
+                    <div>✦ AUTO-RENEWAL</div>
+                    <div>✦ CANCEL ANYTIME</div>
+                </div>
+                <div id="statusMsg" class="status-msg"></div>
+                <div class="button-group">
+                    <button id="subscribeBtn" class="btn-white">SUBSCRIBE</button>
+                    <button id="extendBtn" class="btn-white" style="display:none;">EXTEND MANUAL</button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="dashboard">
+                <div class="dash-title">◆ DASHBOARD ◆</div>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-label">STATUS</div>
+                        <div class="stat-value" id="statusVal">—</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">EXPIRES</div>
+                        <div class="stat-value" id="expiryVal">—</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">TIME LEFT</div>
+                        <div class="stat-value" id="timeVal">—</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">USDC BALANCE</div>
+                        <div class="stat-value" id="balanceVal">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUTO-CHARGE SECTION -->
+            <div class="auto-card">
+                <div class="dash-title">◆ AUTO-CHARGE ◆</div>
+                <p class="auto-desc">Enable auto-charge and the contract will automatically pull USDC from your wallet each month. No manual renewal needed.</p>
+                <div class="auto-status" id="autoStatus"></div>
+                <button id="autoChargeBtn" class="btn-white">ENABLE AUTO-CHARGE</button>
+            </div>
+
+            <!-- ADMIN PANEL (only visible to contract owner) -->
+            <div id="adminPanel" style="display:none;">
+                <div class="admin-box">
+                    <div class="dash-title">◆ ADMIN ◆</div>
+                    <p class="auto-desc">Withdraw all USDC collected from subscriptions.</p>
+                    <button id="withdrawBtn" class="btn-black">WITHDRAW USDC</button>
+                    <div id="adminMsg" class="admin-msg"></div>
+                </div>
+            </div>
+
+            <!-- INFO TEXT -->
+            <div class="info-box">
+                <div class="info-text">
+                    ◆ Auto-charge requires you to APPROVE the contract once.<br>
+                    ◆ After approval, the contract can PULL payments automatically.<br>
+                    ◆ You can disable auto-charge anytime.<br>
+                    ◆ Your subscription expires if payment fails.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000000;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.header {
+    text-align: center;
+    border: 2px solid #ffffff;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 2rem;
+    letter-spacing: 4px;
+    font-weight: normal;
+}
+
+.header p {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    letter-spacing: 2px;
+}
+
+/* ============================================
+   WALLET BOX
+   ============================================ */
+.wallet-box {
+    border: 1px solid #ffffff;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.wallet-display {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+    word-break: break-all;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn-black {
+    background: #000000;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+}
+
+.btn-black:hover {
+    background: #ffffff;
+    color: #000000;
+}
+
+.btn-white {
+    background: #ffffff;
+    color: #000000;
+    border: 2px solid #ffffff;
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    letter-spacing: 2px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-white:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+.btn-disabled, .btn-white:disabled, .btn-black:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* ============================================
+   PLAN CARD
+   ============================================ */
+.plan-card {
+    border: 2px solid #ffffff;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.plan-title {
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 1rem;
+}
+
+.plan-price {
+    font-size: 2.5rem;
+    margin: 1rem 0;
+}
+
+.plan-price span {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.plan-features {
+    margin: 1.5rem 0;
+    line-height: 1.8;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+/* ============================================
+   STATUS MESSAGE
+   ============================================ */
+.status-msg {
+    margin: 1rem 0;
+    padding: 0.8rem;
+    border: 1px solid #333;
+    font-size: 0.8rem;
+}
+
+.status-active {
+    border-color: #ffffff;
+    background: rgba(255,255,255,0.05);
+}
+
+.status-inactive {
+    border-color: #333;
+}
+
+/* ============================================
+   DASHBOARD
+   ============================================ */
+.dashboard {
+    border: 2px solid #ffffff;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dash-title {
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+    font-size: 0.8rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat {
+    border: 1px solid #333;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    opacity: 0.6;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: bold;
+    word-break: break-word;
+}
+
+/* ============================================
+   AUTO-CHARGE CARD
+   ============================================ */
+.auto-card {
+    border: 2px solid #ffffff;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.auto-desc {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.auto-status {
+    margin: 1rem 0;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.auto-enabled {
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    background: rgba(0,255,0,0.05);
+}
+
+.auto-disabled {
+    color: #ff4444;
+    border: 1px solid #ff4444;
+    background: rgba(255,0,0,0.05);
+}
+
+/* ============================================
+   ADMIN PANEL
+   ============================================ */
+.admin-box {
+    border: 2px solid #ffffff;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.admin-msg {
+    margin-top: 1rem;
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+/* ============================================
+   INFO BOX
+   ============================================ */
+.info-box {
+    border: 1px solid #333;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.info-text {
+    font-size: 0.6rem;
+    opacity: 0.5;
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 600px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .plan-price {
+        font-size: 1.8rem;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* ============================================
+   UTILITY
+   ============================================ */
+.text-green {
+    color: #00ff00;
+}
+
+.text-red {
+    color: #ff4444;
+}
+
+.text-center {
+    text-align: center;
+}
